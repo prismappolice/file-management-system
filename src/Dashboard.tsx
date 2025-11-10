@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Dashboard.css'
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = '/api'
 
 interface DashboardProps {
   userType: string  // Changed from 'admin' | 'district' to string to accept any userType

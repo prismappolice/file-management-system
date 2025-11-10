@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './Dashboard.css'
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = '/api'
 
 interface GenericProgramProps {
   userType: string  // Changed to accept any userType string
