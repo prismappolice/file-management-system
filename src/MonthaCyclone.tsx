@@ -19,7 +19,7 @@ interface MonthaCycloneProps {
   onLogout: () => void
 }
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = '/api'
 
 function MonthaCyclone({ userType, userName, onLogout }: MonthaCycloneProps) {
   const navigate = useNavigate()

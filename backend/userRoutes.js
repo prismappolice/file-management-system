@@ -1,5 +1,6 @@
-const express = require('express');
 const bcrypt = require('bcrypt');
+console.log('Hash for admin123:', bcrypt.hashSync('admin123', 10));
+const express = require('express');
 const router = express.Router();
 const db = require('./database');
 

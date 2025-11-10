@@ -5,7 +5,7 @@ import Dashboard from './Dashboard'
 import GenericProgram from './GenericProgram'
 import UserManagement from './UserManagement'
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = '/api'
 
 interface LoginPageProps {
   username: string
