@@ -8,7 +8,10 @@ router.get('/programs', async (req, res) => {
   const sql = `SELECT * FROM programs ORDER BY created_at ASC`;
   
   try {
+    console.log('Fetching all programs from database...');
     const result = await pool.query(sql);
+    console.log(`Found ${result.rows.length} programs in database`);
+    console.log('Programs:', result.rows);
     res.json({
       success: true,
       programs: result.rows

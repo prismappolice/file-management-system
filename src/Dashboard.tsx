@@ -69,10 +69,16 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
+        console.log('Fetching programs from API...')
         const response = await fetch(`${API_URL}/programs`)
+        console.log('Programs API response status:', response.status)
         const data = await response.json()
+        console.log('Programs API response data:', data)
         if (data.success) {
+          console.log('Setting programs:', data.programs)
           setPrograms(data.programs)
+        } else {
+          console.error('Failed to fetch programs:', data)
         }
       } catch (error) {
         console.error('Error fetching programs:', error)
