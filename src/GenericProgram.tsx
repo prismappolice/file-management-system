@@ -34,10 +34,14 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
+  console.log('GenericProgram loaded:', { userType, userName, pathname: location.pathname })
+
   // Helper functions to determine user permissions (case-insensitive check)
   const isAdmin = userType && userType.toUpperCase() === 'ADMIN'
   const isDistrictUser = !isAdmin  // Any non-admin user is treated as district user  // Get program ID from URL path
   const programId = location.pathname.substring(1) // removes leading '/'
+  
+  console.log('Program ID:', programId, 'Is Admin:', isAdmin)
   
   const [programDetails, setProgramDetails] = useState<Program | null>(null)
   const [files, setFiles] = useState<FileData[]>([])
@@ -63,13 +67,17 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   useEffect(() => {
     const fetchProgramDetails = async () => {
       try {
+        console.log('Fetching program details for path:', location.pathname)
         const response = await fetch(`${API_URL}/programs`)
         const data = await response.json()
+        console.log('Programs response:', data)
         if (data.success) {
           const program = data.programs.find((p: Program) => p.path === location.pathname)
+          console.log('Found program:', program)
           if (program) {
             setProgramDetails(program)
           } else {
+            console.warn('Program not found, redirecting to dashboard')
             // Program not found, redirect to dashboard
             navigate('/dashboard')
           }
@@ -77,13 +85,15 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
       } catch (err) {
         console.error('Error fetching program details:', err)
         // Fallback to default
-        setProgramDetails({
+        const fallbackProgram = {
           id: programId,
           name: programId.charAt(0).toUpperCase() + programId.slice(1),
           icon: programId.charAt(0).toUpperCase(),
           path: location.pathname,
           color: '#ff0844'
-        })
+        }
+        console.log('Using fallback program:', fallbackProgram)
+        setProgramDetails(fallbackProgram)
       }
     }
     fetchProgramDetails()
@@ -103,10 +113,13 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
 
   const fetchFiles = async () => {
     try {
+      console.log('Fetching files for program:', programId, 'userType:', userType, 'userName:', userName)
       const response = await fetch(`${API_URL}/files?program=${programId}&userType=${userType}&userName=${userName}`)
       const data = await response.json()
+      console.log('Files response:', data)
       if (data.success) {
         setFiles(data.files)
+        console.log('Files loaded:', data.files.length)
       }
     } catch (error) {
       console.error('Error fetching files:', error)
@@ -114,6 +127,7 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   }
 
   useEffect(() => {
+    console.log('Fetching files effect triggered')
     fetchFiles()
   }, [programId])
 
