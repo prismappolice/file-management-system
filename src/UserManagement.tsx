@@ -282,20 +282,36 @@ function UserManagement({ userName, userType, onLogout }: UserManagementProps) {
           {/* Admin password policy note */}
           {userType?.toUpperCase() === 'ADMIN' && (
             <div style={{
-              background: '#fffbe6',
-              border: '1px solid #ffe58f',
-              color: '#ad6800',
-              borderRadius: '6px',
-              padding: '0.75rem 1rem',
+              background: 'linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%)',
+              border: '1px solid #ffd666',
+              borderLeft: '4px solid #faad14',
+              color: '#8c5e00',
+              borderRadius: '8px',
+              padding: '1rem 1.25rem',
               marginBottom: '1.5rem',
-              fontSize: '15px',
+              fontSize: '14px',
               fontWeight: 500,
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.7rem'
+              alignItems: 'flex-start',
+              gap: '1rem',
+              boxShadow: '0 2px 8px rgba(250, 173, 20, 0.15)'
             }}>
-              <span role="img" aria-label="info">ℹ️</span>
-              For security, passwords are only visible immediately after creation or change. If a user forgets their password, use the <b>Change Password</b> button to set a new one and share it with them. Old passwords cannot be recovered.
+              <span role="img" aria-label="info" style={{ 
+                fontSize: '24px',
+                flexShrink: 0,
+                marginTop: '-2px'
+              }}>💡</span>
+              <div>
+                <strong style={{ 
+                  color: '#d48806',
+                  fontSize: '15px',
+                  display: 'block',
+                  marginBottom: '0.5rem'
+                }}>Password Security Policy</strong>
+                <span style={{ lineHeight: '1.6' }}>
+                  For security, passwords are only visible immediately after creation or change. If a user forgets their password, use the <b style={{ color: '#0066ff' }}>Change Password</b> button to set a new one and share it with them. Old passwords cannot be recovered.
+                </span>
+              </div>
             </div>
           )}
           {message && <div className="success-message">{message}</div>}

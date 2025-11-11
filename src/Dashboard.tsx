@@ -31,6 +31,12 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
   const [newProgramDate, setNewProgramDate] = useState(new Date().toISOString().split('T')[0])
   const [newProgramColor, setNewProgramColor] = useState('#ff0844')
   
+  // Debug: Log userType on component mount
+  useEffect(() => {
+    console.log('Dashboard loaded - UserType:', userType, 'UserName:', userName)
+    console.log('Is Admin:', userType?.toUpperCase() === 'ADMIN')
+  }, [userType, userName])
+  
   // Table view state
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(25)
@@ -108,7 +114,10 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newProgram)
     })
-    .then(res => res.json())
+    .then(res => {
+      console.log('Response status:', res.status)
+      return res.json()
+    })
     .then(data => {
       console.log('Program creation response:', data)
       if (data.success) {
@@ -123,12 +132,13 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
         alert(`Program "${newProgramName}" added successfully!`)
       } else {
         console.error('Program creation failed:', data.error)
-        alert(data.error || 'Failed to add program')
+        const errorMsg = data.error || 'Failed to add program'
+        alert(`Error: ${errorMsg}\n\nDebug Info:\n- UserType: ${userType}\n- UserName: ${userName}\n- Program: ${newProgramName}`)
       }
     })
     .catch(error => {
       console.error('Error adding program:', error)
-      alert('Failed to add program')
+      alert(`Network Error: ${error.message}\n\nPlease check if the server is running.`)
     })
   }
 
