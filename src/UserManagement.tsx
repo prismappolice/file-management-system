@@ -70,7 +70,7 @@ function UserManagement({ userName, onLogout }: UserManagementProps) {
   const [passwordHistory, setPasswordHistory] = useState<{ [userId: number]: string }>({})
 
   const getDisplayPassword = (user: any) => {
-    const isAdmin = users.find(u => u.username === userName)?.userType?.toLowerCase() === 'admin';
+    const isAdmin = users.find(u => u.username === userName)?.userType?.toUpperCase() === 'ADMIN';
     if (createdUserInfo && createdUserInfo.username === user.username) {
       return createdUserInfo.password;
     }
@@ -278,7 +278,7 @@ function UserManagement({ userName, onLogout }: UserManagementProps) {
 
         <div className="user-management-container">
           {/* Admin password policy note */}
-          {users.find(u => u.username === userName)?.userType?.toLowerCase() === 'admin' && (
+          {users.find(u => u.username === userName)?.userType?.toUpperCase() === 'ADMIN' && (
             <div style={{
               background: '#fffbe6',
               border: '1px solid #ffe58f',

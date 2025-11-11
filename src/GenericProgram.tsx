@@ -34,8 +34,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Helper functions to determine user permissions
-  const isAdmin = userType && userType.toLowerCase() === 'admin'
+  // Helper functions to determine user permissions (case-insensitive check)
+  const isAdmin = userType && userType.toUpperCase() === 'ADMIN'
   const isDistrictUser = !isAdmin  // Any non-admin user is treated as district user  // Get program ID from URL path
   const programId = location.pathname.substring(1) // removes leading '/'
   
