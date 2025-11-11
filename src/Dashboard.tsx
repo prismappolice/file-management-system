@@ -38,8 +38,8 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [dateFilter, setDateFilter] = useState('')
   
-  // Helper function to check if user is admin
-  const isAdmin = userType === 'admin'
+  // Helper function to check if user is admin (case-insensitive check)
+  const isAdmin = userType && userType.toUpperCase() === 'ADMIN'
   const isDistrictUser = !isAdmin  // Any non-admin user is treated as district user
 
   // Helper function to generate icon element
