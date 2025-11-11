@@ -36,14 +36,15 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
 
   console.log('GenericProgram loaded:', { userType, userName, pathname: location.pathname })
 
-  // Helper functions to determine user permissions (case-insensitive check)
+  // Helper function to determine user permissions (case-insensitive check)
   const isAdmin = userType && userType.toUpperCase() === 'ADMIN'
-  const isDistrictUser = !isAdmin  // Any non-admin user is treated as district user  // Get program ID from URL path
-  const programId = location.pathname.substring(1) // removes leading '/'
-  
-  console.log('Program ID:', programId, 'Is Admin:', isAdmin)
   
   const [programDetails, setProgramDetails] = useState<Program | null>(null)
+  
+  // Get program ID from programDetails once it's loaded
+  const programId = programDetails?.id || ''
+  
+  console.log('GenericProgram - pathname:', location.pathname, 'programId:', programId, 'isAdmin:', isAdmin)
   const [files, setFiles] = useState<FileData[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchDate, setSearchDate] = useState('')
@@ -77,27 +78,19 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
           if (program) {
             setProgramDetails(program)
           } else {
-            console.warn('Program not found, redirecting to dashboard')
+            console.warn('Program not found for path:', location.pathname)
+            console.warn('Available programs:', data.programs.map((p: Program) => ({ id: p.id, path: p.path })))
             // Program not found, redirect to dashboard
             navigate('/dashboard')
           }
         }
       } catch (err) {
         console.error('Error fetching program details:', err)
-        // Fallback to default
-        const fallbackProgram = {
-          id: programId,
-          name: programId.charAt(0).toUpperCase() + programId.slice(1),
-          icon: programId.charAt(0).toUpperCase(),
-          path: location.pathname,
-          color: '#ff0844'
-        }
-        console.log('Using fallback program:', fallbackProgram)
-        setProgramDetails(fallbackProgram)
+        navigate('/dashboard')
       }
     }
     fetchProgramDetails()
-  }, [programId, location.pathname, navigate])
+  }, [location.pathname, navigate])
 
   const filteredFiles = files.filter((file) => {
     const matchesText = 
@@ -112,6 +105,11 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   })
 
   const fetchFiles = async () => {
+    if (!programId) {
+      console.log('Skipping fetchFiles - programId not yet available')
+      return
+    }
+    
     try {
       console.log('Fetching files for program:', programId, 'userType:', userType, 'userName:', userName)
       const response = await fetch(`${API_URL}/files?program=${programId}&userType=${userType}&userName=${userName}`)
@@ -127,8 +125,10 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   }
 
   useEffect(() => {
-    console.log('Fetching files effect triggered')
-    fetchFiles()
+    if (programId) {
+      console.log('Fetching files effect triggered for programId:', programId)
+      fetchFiles()
+    }
   }, [programId])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -309,9 +309,9 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
         </div>
 
         <div className="content-area">
-          {isDistrictUser && (
-            <div className="upload-section">
-              <h2>Upload New File</h2>
+          {/* Upload section - shown to all users */}
+          <div className="upload-section">
+            <h2>Upload New File</h2>
               
               <form onSubmit={handleFileUpload} className="upload-form">
               <div className="form-row">
@@ -398,7 +398,6 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
                 </button>
               </form>
             </div>
-          )}
 
           <div className="files-section">
             <h2>All Uploaded Files</h2>
@@ -473,8 +472,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
                             >
                               ⬇ Download
                             </button>
-                            {/* Only show delete button to regular users for their own files */}
-                            {!isAdmin && file.created_by === userName && (
+                            {/* Admins can delete any file, users can only delete their own files */}
+                            {(isAdmin || file.created_by === userName) && (
                               <button
                                 onClick={(e) => confirmDelete(file, e)}
                                 className="delete-button"
