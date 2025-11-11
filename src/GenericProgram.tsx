@@ -111,11 +111,12 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   }, [location.pathname])
 
   const filteredFiles = files.filter((file) => {
+    const query = (searchQuery || '').toLowerCase()
     const matchesText = 
-      (file.fileNo?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      (file.subject?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      (file.department?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      (file.filename?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+      (file.fileNo?.toLowerCase() || '').includes(query) ||
+      (file.subject?.toLowerCase() || '').includes(query) ||
+      (file.department?.toLowerCase() || '').includes(query) ||
+      (file.filename?.toLowerCase() || '').includes(query)
     
     const matchesDate = !searchDate || file.date === searchDate
     
