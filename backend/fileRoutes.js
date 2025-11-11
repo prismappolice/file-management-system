@@ -117,7 +117,7 @@ router.get('/files', (req, res) => {
   }
   
   // Apply user-based file access control
-  if (userType !== 'admin') {
+  if (!userType || userType.toLowerCase() !== 'admin') {
     // Non-admin users can only see their own files
     whereClauses.push(`created_by = ?`);
     params.push(userName);
@@ -614,8 +614,8 @@ router.delete('/files/:id', (req, res) => {
 
     // Authorization check:
     // 1. Admin can delete any file
-    // 2. District user can only delete their own files
-    const isAdmin = userType === 'admin';
+    // 2. Regular users can only delete their own files
+    const isAdmin = userType && userType.toLowerCase() === 'admin';
     const isOwner = row.created_by === userName;
 
     console.log(`Auth check - isAdmin: ${isAdmin}, isOwner: ${isOwner}`);

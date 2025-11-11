@@ -50,7 +50,7 @@ async function cleanupUsers() {
         
         await new Promise((resolveAdmin, rejectAdmin) => {
           db.run(
-            `INSERT OR REPLACE INTO users (id, username, password, fullname, userType) VALUES (1, 'admin', ?, 'System Administrator', 'ADMIN')`,
+            `INSERT OR REPLACE INTO users (id, username, password, fullname, userType) VALUES (1, 'admin', ?, 'System Administrator', 'admin')`,
             [adminPassword],
             function(err) {
               if (err) {
