@@ -66,9 +66,15 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  // Fetch program details from server
+  // Fetch program details from server - only run once per pathname
   useEffect(() => {
     const fetchProgramDetails = async () => {
+      // Don't refetch if we already have program details for this path
+      if (programDetails && programDetails.path === location.pathname) {
+        console.log('Program details already loaded for:', location.pathname)
+        return
+      }
+
       setIsLoadingProgram(true)
       setProgramNotFound(false)
       try {
@@ -102,7 +108,7 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
       }
     }
     fetchProgramDetails()
-  }, [location.pathname, navigate])
+  }, [location.pathname])
 
   const filteredFiles = files.filter((file) => {
     const matchesText = 
@@ -281,6 +287,14 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
     }
   }
 
+  // Debug logging
+  console.log('GenericProgram render state:', { 
+    isLoadingProgram, 
+    hasProgramDetails: !!programDetails,
+    programId,
+    programNotFound 
+  })
+
   // Show loading while fetching program details
   if (isLoadingProgram || !programDetails) {
     return (
@@ -292,6 +306,9 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
               {programNotFound 
                 ? 'The requested program could not be found. Redirecting to dashboard...' 
                 : 'Fetching program details, please wait...'}
+            </p>
+            <p style={{ color: '#999', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+              Debug: isLoadingProgram={String(isLoadingProgram)}, programDetails={programDetails ? 'loaded' : 'null'}
             </p>
           </div>
         </div>
