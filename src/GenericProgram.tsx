@@ -141,7 +141,7 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
       console.log('Fetching files effect triggered for programId:', programId)
       fetchFiles()
     }
-  }, [programId])
+  }, [programId, userType, userName])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
