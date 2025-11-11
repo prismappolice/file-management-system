@@ -43,17 +43,19 @@ router.post('/programs', async (req, res) => {
   try {
     await pool.query(sql, [id, name, icon || '', path, color, currentDate, createdBy || 'unknown']);
     
+    console.log('Program created successfully:', { id, name });
+    
     res.json({
       success: true,
       message: 'Program added successfully',
       program: { id, name, icon, path, color, created_date: currentDate, created_by: createdBy || 'unknown' }
     });
   } catch (err) {
+    console.error('Database error during program creation:', err);
     if (err.code === '23505') { // PostgreSQL unique violation
-      return res.status(400).json({ error: 'Program already exists' });
+      return res.status(400).json({ error: 'Program already exists with this ID' });
     }
-    console.error('Database error:', err);
-    return res.status(500).json({ error: 'Failed to add program' });
+    return res.status(500).json({ error: `Failed to add program: ${err.message}` });
   }
 });
 
