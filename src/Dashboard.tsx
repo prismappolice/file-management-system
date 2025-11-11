@@ -256,8 +256,8 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
           </div>
         )}
 
-        {/* Add Program Modal */}
-        {showAddProgram && (
+        {/* Add Program Modal - Admin Only */}
+        {isAdmin && showAddProgram && (
           <div className="modal-overlay" onClick={() => setShowAddProgram(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>Add New Program</h2>
@@ -314,8 +314,8 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && programToDelete && (
+        {/* Delete Confirmation Modal - Admin Only */}
+        {isAdmin && showDeleteConfirm && programToDelete && (
           <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>Delete Program</h2>
