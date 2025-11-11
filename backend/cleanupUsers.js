@@ -32,8 +32,8 @@ async function cleanupUsers() {
     
     await pool.query(
       `INSERT INTO users (id, username, password, fullname, userType) 
-       VALUES (1, 'admin', $1, 'System Administrator', 'admin')
-       ON CONFLICT (username) DO UPDATE SET password = $1, fullname = 'System Administrator', userType = 'admin'`,
+       VALUES (1, 'admin', $1, 'System Administrator', 'ADMIN')
+       ON CONFLICT (username) DO UPDATE SET password = $1, fullname = 'System Administrator', userType = 'ADMIN'`,
       [adminPassword]
     );
     console.log('✅ Admin user configured');
