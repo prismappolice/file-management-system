@@ -40,6 +40,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   const isAdmin = userType && userType.toUpperCase() === 'ADMIN'
   
   const [programDetails, setProgramDetails] = useState<Program | null>(null)
+  const [isLoadingProgram, setIsLoadingProgram] = useState(true)
+  const [programNotFound, setProgramNotFound] = useState(false)
   
   // Get program ID from programDetails once it's loaded
   const programId = programDetails?.id || ''
@@ -67,6 +69,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   // Fetch program details from server
   useEffect(() => {
     const fetchProgramDetails = async () => {
+      setIsLoadingProgram(true)
+      setProgramNotFound(false)
       try {
         console.log('Fetching program details for path:', location.pathname)
         const response = await fetch(`${API_URL}/programs`)
@@ -80,13 +84,21 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
           } else {
             console.warn('Program not found for path:', location.pathname)
             console.warn('Available programs:', data.programs.map((p: Program) => ({ id: p.id, path: p.path })))
-            // Program not found, redirect to dashboard
-            navigate('/dashboard')
+            setProgramNotFound(true)
+            // Program not found, redirect to dashboard after showing message
+            setTimeout(() => navigate('/dashboard'), 2000)
           }
+        } else {
+          console.error('Failed to fetch programs:', data)
+          setProgramNotFound(true)
+          setTimeout(() => navigate('/dashboard'), 2000)
         }
       } catch (err) {
         console.error('Error fetching program details:', err)
-        navigate('/dashboard')
+        setProgramNotFound(true)
+        setTimeout(() => navigate('/dashboard'), 2000)
+      } finally {
+        setIsLoadingProgram(false)
       }
     }
     fetchProgramDetails()
@@ -270,12 +282,17 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   }
 
   // Show loading while fetching program details
-  if (!programDetails) {
+  if (isLoadingProgram || !programDetails) {
     return (
       <div className="App">
         <div className="dashboard-wrapper">
           <div className="dashboard-header">
-            <h1>Loading...</h1>
+            <h1>{programNotFound ? '⚠️ Program Not Found' : '⏳ Loading Program...'}</h1>
+            <p style={{ color: programNotFound ? '#dc3545' : '#666', marginTop: '1rem', fontSize: '1.1rem' }}>
+              {programNotFound 
+                ? 'The requested program could not be found. Redirecting to dashboard...' 
+                : 'Fetching program details, please wait...'}
+            </p>
           </div>
         </div>
       </div>
