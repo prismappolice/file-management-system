@@ -24,7 +24,7 @@ router.post('/programs', async (req, res) => {
   const { id, name, icon, path, color, created_date, createdBy, userType } = req.body;
 
   // Check if user is admin (case-insensitive)
-  if (!userType || userType.toLowerCase() !== 'admin') {
+  if (!userType || userType.toUpperCase() !== 'ADMIN') {
     return res.status(403).json({ error: 'Access denied. Only administrators can create programs.' });
   }
 
@@ -60,7 +60,7 @@ router.delete('/programs/:id', async (req, res) => {
   const userType = req.query.userType || req.headers['user-type'];
 
   // Check if user is admin (case-insensitive)
-  if (!userType || userType.toLowerCase() !== 'admin') {
+  if (!userType || userType.toUpperCase() !== 'ADMIN') {
     return res.status(403).json({ error: 'Access denied. Only administrators can delete programs.' });
   }
 
