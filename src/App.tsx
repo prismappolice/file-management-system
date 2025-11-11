@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import './App.css'
 import Dashboard from './Dashboard'
 import GenericProgram from './GenericProgram'
@@ -47,7 +47,10 @@ const LoginPage = ({ username, password, error, onUsernameChange, onPasswordChan
   </div>
 )
 
-function App() {
+// Inner component that uses router hooks
+function AppContent() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [userType, setUserType] = useState<string>('USER')  // Changed to string to accept any userType
@@ -106,8 +109,9 @@ function App() {
         setIsLoggedIn(true)
         setLoggedInUser(data.user.fullname)
         setUserType(normalizedUserType)
-        // Force navigation to dashboard after login
-        window.history.pushState({}, '', '/dashboard')
+        
+        // Navigate to dashboard after login
+        navigate('/dashboard')
       } else {
         setError(data.error || 'Invalid username or password')
       }
@@ -126,8 +130,9 @@ function App() {
     setUsername('')
     setPassword('')
     setError('')
-    // Clear URL and go to root
-    window.history.pushState({}, '', '/')
+    
+    // Navigate to root
+    navigate('/')
   }
 
   // Show loading screen while checking for existing session
@@ -165,7 +170,8 @@ function App() {
     )
   }
 
-  if (!isLoggedIn) {
+  // If not logged in and trying to access protected routes, show login
+  if (!isLoggedIn && location.pathname !== '/') {
     return (
       <LoginPage
         username={username}
@@ -179,14 +185,52 @@ function App() {
   }
 
   return (
+    <Routes>
+      <Route path="/" element={
+        !isLoggedIn ? (
+          <LoginPage
+            username={username}
+            password={password}
+            error={error}
+            onUsernameChange={setUsername}
+            onPasswordChange={setPassword}
+            onLogin={handleLogin}
+          />
+        ) : (
+          <Navigate to="/dashboard" replace />
+        )
+      } />
+      <Route path="/dashboard" element={
+        isLoggedIn ? (
+          <Dashboard userType={userType} userName={loggedInUser} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+      <Route path="/user-management" element={
+        isLoggedIn ? (
+          <UserManagement userName={loggedInUser} userType={userType} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+      {/* Dynamic route for all program pages - GenericProgram will handle all programs */}
+      <Route path="/*" element={
+        isLoggedIn ? (
+          <GenericProgram userType={userType} userName={loggedInUser} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+    </Routes>
+  )
+}
+
+// Main App component wraps everything in Router
+function App() {
+  return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard userType={userType} userName={loggedInUser} onLogout={handleLogout} />} />
-        <Route path="/user-management" element={<UserManagement userName={loggedInUser} userType={userType} onLogout={handleLogout} />} />
-        {/* Dynamic route for all program pages - GenericProgram will handle all programs */}
-        <Route path="/*" element={<GenericProgram userType={userType} userName={loggedInUser} onLogout={handleLogout} />} />
-      </Routes>
+      <AppContent />
     </Router>
   )
 }
