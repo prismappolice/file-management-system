@@ -180,7 +180,7 @@
 | View Own Files | ✅ | ✅ |
 | View All Files | ✅ | ❌ Only own |
 | Delete Own Files | ✅ | ✅ |
-| Delete Any Files | ✅ | ❌ |
+| Delete Any Files | ❌ **Privacy Protection** | ❌ |
 | Change Password | ✅ | ✅ |
 
 ---
