@@ -119,7 +119,7 @@ router.get('/files', async (req, res) => {
   }
   
   // Apply user-based file access control
-  if (!userType || userType.toLowerCase() !== 'admin') {
+  if (!userType || userType.toUpperCase() !== 'ADMIN') {
     // Non-admin users can only see their own files
     whereClauses.push(`created_by = $${paramIndex++}`);
     params.push(userName);
