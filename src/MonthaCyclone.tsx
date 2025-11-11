@@ -265,6 +265,23 @@ function MonthaCyclone({ userType, userName, onLogout }: MonthaCycloneProps) {
           </div>
         </div>
 
+        {/* Admin info section - explaining admin role */}
+        {isAdmin && (
+          <div className="admin-info-section" style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            padding: '1.5rem',
+            borderRadius: '10px',
+            marginBottom: '2rem',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>👁️ Administrator View Mode</h2>
+            <p style={{ margin: 0, fontSize: '1rem' }}>
+              You are viewing all files uploaded by users. Admins can view and download files but cannot upload or delete them.
+            </p>
+          </div>
+        )}
+
         {isDistrictUser && (
           <div className="upload-section">
             <h2>Upload New File</h2>
