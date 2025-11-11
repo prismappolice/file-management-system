@@ -147,7 +147,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         username: user.username,
         fullname: user.fullname,
-        userType: user.userType
+        userType: user.usertype  // PostgreSQL column is lowercase
       }
     });
   } catch (error) {
