@@ -102,11 +102,22 @@ body {
 .App {
   width: 100%;
   min-height: 100vh;
+  position: relative;
+}
+
+/* Center content only for login container */
+.App:has(.login-container) {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
-  position: relative;
+}
+
+/* For dashboard and program pages, use normal flow */
+.App:has(.dashboard-wrapper),
+.App:has(.dashboard-page-wrapper) {
+  display: block;
+  padding: 0;
 }
 
 /* ===== PROFESSIONAL LOGIN SYSTEM ===== */

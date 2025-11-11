@@ -1,5 +1,17 @@
 /* Dashboard Page Styles */
 
+/* Dashboard wrapper for program pages (GenericProgram, MonthaCyclone) */
+.dashboard-wrapper {
+  width: 100%;
+  max-width: 100%;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
