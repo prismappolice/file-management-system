@@ -613,16 +613,14 @@ router.delete('/files/:id', (req, res) => {
     console.log(`File found - created_by: "${row.created_by}"`);
 
     // Authorization check:
-    // 1. Admin can delete any file
-    // 2. Regular users can only delete their own files
-    const isAdmin = userType && userType.toLowerCase() === 'admin';
+    // Only file owner can delete their own files (admin cannot delete user files for privacy)
     const isOwner = row.created_by === userName;
 
-    console.log(`Auth check - isAdmin: ${isAdmin}, isOwner: ${isOwner}`);
+    console.log(`Auth check - isOwner: ${isOwner}`);
     console.log(`Comparing: "${row.created_by}" === "${userName}"`);
 
-    if (!isAdmin && !isOwner) {
-      console.log('Authorization failed - access denied');
+    if (!isOwner) {
+      console.log('Authorization failed - only file owner can delete');
       return res.status(403).json({ 
         error: 'You can only delete files uploaded by you',
         success: false 

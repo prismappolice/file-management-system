@@ -459,13 +459,16 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
                             >
                               ⬇ Download
                             </button>
-                            <button
-                              onClick={(e) => confirmDelete(file, e)}
-                              className="delete-button"
-                              title="Delete file"
-                            >
-                              🗑 Delete
-                            </button>
+                            {/* Only show delete button to regular users for their own files */}
+                            {!isAdmin && file.created_by === userName && (
+                              <button
+                                onClick={(e) => confirmDelete(file, e)}
+                                className="delete-button"
+                                title="Delete file"
+                              >
+                                🗑 Delete
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
