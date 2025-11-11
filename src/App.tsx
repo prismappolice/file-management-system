@@ -183,7 +183,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard userType={userType} userName={loggedInUser} onLogout={handleLogout} />} />
-        <Route path="/user-management" element={<UserManagement userName={loggedInUser} onLogout={handleLogout} />} />
+        <Route path="/user-management" element={<UserManagement userName={loggedInUser} userType={userType} onLogout={handleLogout} />} />
         {/* Dynamic route for all program pages - GenericProgram will handle all programs */}
         <Route path="/*" element={<GenericProgram userType={userType} userName={loggedInUser} onLogout={handleLogout} />} />
       </Routes>

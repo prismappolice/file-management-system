@@ -17,10 +17,11 @@ interface User {
 
 interface UserManagementProps {
   userName: string
+  userType: string
   onLogout: () => void
 }
 
-function UserManagement({ userName, onLogout }: UserManagementProps) {
+function UserManagement({ userName, userType, onLogout }: UserManagementProps) {
   const navigate = useNavigate()
   const [users, setUsers] = useState<User[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -70,7 +71,8 @@ function UserManagement({ userName, onLogout }: UserManagementProps) {
   const [passwordHistory, setPasswordHistory] = useState<{ [userId: number]: string }>({})
 
   const getDisplayPassword = (user: any) => {
-    const isAdmin = users.find(u => u.username === userName)?.userType?.toUpperCase() === 'ADMIN';
+    // Check if current logged-in user is admin using the userType prop
+    const isAdmin = userType?.toUpperCase() === 'ADMIN';
     if (createdUserInfo && createdUserInfo.username === user.username) {
       return createdUserInfo.password;
     }
@@ -278,7 +280,7 @@ function UserManagement({ userName, onLogout }: UserManagementProps) {
 
         <div className="user-management-container">
           {/* Admin password policy note */}
-          {users.find(u => u.username === userName)?.userType?.toUpperCase() === 'ADMIN' && (
+          {userType?.toUpperCase() === 'ADMIN' && (
             <div style={{
               background: '#fffbe6',
               border: '1px solid #ffe58f',
