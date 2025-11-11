@@ -1,103 +1,96 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-// Create database connection
-const dbPath = path.join(__dirname, '..', 'files.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to SQLite database');
-    console.log('Using database at:', dbPath);
-    initializeDatabase();
-  }
+// PostgreSQL connection configuration
+const pool = new Pool({
+  user: 'fms_user',
+  host: 'localhost',
+  database: 'file_management',
+  password: 'FMS_Secure_2025!',
+  port: 5432,
+  // Connection pool settings for better performance
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-// Keep database connection open
-db.configure('busyTimeout', 5000);
+// Test connection
+pool.on('connect', () => {
+  console.log('Connected to PostgreSQL database');
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
 
 // Initialize database schema
-function initializeDatabase() {
-  const createFilesTableSQL = `
-    CREATE TABLE IF NOT EXISTS files (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      fileNo TEXT NOT NULL,
-      subject TEXT NOT NULL,
-      department TEXT NOT NULL,
-      date TEXT NOT NULL,
-      filename TEXT NOT NULL,
-      filepath TEXT NOT NULL,
-      program TEXT NOT NULL DEFAULT 'montha',
-      created_by TEXT,
-      uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `;
+async function initializeDatabase() {
+  const client = await pool.connect();
+  
+  try {
+    console.log('Initializing PostgreSQL database schema...');
 
-  const createProgramsTableSQL = `
-    CREATE TABLE IF NOT EXISTS programs (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      icon TEXT,
-      path TEXT NOT NULL,
-      color TEXT NOT NULL,
-      created_by TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `;
+    // Create users table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        fullname VARCHAR(255) NOT NULL,
+        userType VARCHAR(50) NOT NULL DEFAULT 'district',
+        created_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP
+      )
+    `);
+    console.log('✓ Users table created or already exists');
 
-  const createUsersTableSQL = `
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      fullname TEXT NOT NULL,
-      userType TEXT NOT NULL DEFAULT 'district',
-      created_by TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
-    )
-  `;
+    // Create programs table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS programs (
+        id VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        icon TEXT,
+        path VARCHAR(255) NOT NULL,
+        color VARCHAR(50) NOT NULL,
+        created_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_date VARCHAR(50)
+      )
+    `);
+    console.log('✓ Programs table created or already exists');
 
-  db.run(createFilesTableSQL, (err) => {
-    if (err) {
-      console.error('Error creating files table:', err.message);
-    } else {
-      console.log('Files table created or already exists');
-      // Add program column if it doesn't exist (for existing databases)
-      db.run(`ALTER TABLE files ADD COLUMN program TEXT NOT NULL DEFAULT 'montha'`, (err) => {
-        if (err && !err.message.includes('duplicate column')) {
-          console.error('Error adding program column:', err.message);
-        }
-      });
-    }
-  });
+    // Create files table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS files (
+        id SERIAL PRIMARY KEY,
+        fileNo VARCHAR(255) NOT NULL,
+        subject TEXT NOT NULL,
+        department VARCHAR(255) NOT NULL,
+        date VARCHAR(50) NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        filepath VARCHAR(500) NOT NULL,
+        program VARCHAR(255) NOT NULL DEFAULT 'montha',
+        created_by VARCHAR(255),
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Files table created or already exists');
 
-  db.run(createProgramsTableSQL, (err) => {
-    if (err) {
-      console.error('Error creating programs table:', err.message);
-    } else {
-      console.log('Programs table created or already exists');
-      // Add created_date column if it doesn't exist (for existing databases)
-      db.run(`ALTER TABLE programs ADD COLUMN created_date TEXT`, (err) => {
-        if (err && !err.message.includes('duplicate column')) {
-          console.error('Error adding created_date column:', err.message);
-        }
-      });
-      // Programs will be created dynamically by admin users
-      // No default programs inserted
-    }
-  });
-
-  db.run(createUsersTableSQL, (err) => {
-    if (err) {
-      console.error('Error creating users table:', err.message);
-    } else {
-      console.log('Users table created or already exists');
-      
-      // Note: Default users are now managed by cleanupUsers.js script
-      // This ensures proper password hashing and security
-    }
-  });
+    console.log('Database initialization complete!');
+  } catch (err) {
+    console.error('Error initializing database:', err);
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
-module.exports = db;
+// Initialize on startup
+initializeDatabase().catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
+});
+
+// Export pool for queries
+module.exports = pool;

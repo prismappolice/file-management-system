@@ -2,21 +2,21 @@ const bcrypt = require('bcrypt');
 console.log('Hash for admin123:', bcrypt.hashSync('admin123', 10));
 const express = require('express');
 const router = express.Router();
-const db = require('./database');
+const pool = require('./database');
 
 const SALT_ROUNDS = 10;
 
 // Get all users (admin only)
-router.get('/users', (req, res) => {
+router.get('/users', async (req, res) => {
   const sql = `SELECT id, username, password, fullname, userType, created_by, created_at, last_login FROM users ORDER BY created_at DESC`;
   
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error('Error fetching users:', err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-    res.json({ success: true, users: rows });
-  });
+  try {
+    const result = await pool.query(sql);
+    res.json({ success: true, users: result.rows });
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Create new user (admin only)
@@ -34,35 +34,30 @@ router.post('/users/create', async (req, res) => {
     // Hash the password before storing
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     
-    const sql = `INSERT INTO users (username, password, fullname, userType, created_by) VALUES (?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO users (username, password, fullname, userType, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING id`;
     const params = [username, hashedPassword, fullname, userType || 'district', createdBy || 'admin'];
 
-    db.run(sql, params, function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE constraint')) {
-          return res.status(400).json({ 
-            success: false, 
-            error: 'Username already exists' 
-          });
-        }
-        console.error('Error creating user:', err);
-        return res.status(500).json({ success: false, error: err.message });
-      }
-
-      res.json({ 
-        success: true, 
-        message: 'User created successfully',
-        userId: this.lastID 
-      });
+    const result = await pool.query(sql, params);
+    
+    res.json({ 
+      success: true, 
+      message: 'User created successfully',
+      userId: result.rows[0].id 
     });
   } catch (error) {
-    console.error('Error hashing password:', error);
-    return res.status(500).json({ success: false, error: 'Failed to create user' });
+    if (error.code === '23505') { // PostgreSQL unique violation error code
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Username already exists' 
+      });
+    }
+    console.error('Error creating user:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // Delete user (admin only)
-router.delete('/users/:id', (req, res) => {
+router.delete('/users/:id', async (req, res) => {
   const userId = req.params.id;
 
   // Prevent deleting the main admin user (id = 1)
@@ -73,15 +68,12 @@ router.delete('/users/:id', (req, res) => {
     });
   }
 
-  const sql = `DELETE FROM users WHERE id = ?`;
+  const sql = `DELETE FROM users WHERE id = $1`;
 
-  db.run(sql, [userId], function(err) {
-    if (err) {
-      console.error('Error deleting user:', err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-
-    if (this.changes === 0) {
+  try {
+    const result = await pool.query(sql, [userId]);
+    
+    if (result.rowCount === 0) {
       return res.status(404).json({ 
         success: false, 
         error: 'User not found' 
@@ -92,7 +84,10 @@ router.delete('/users/:id', (req, res) => {
       success: true, 
       message: 'User deleted successfully' 
     });
-  });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Login endpoint
@@ -106,14 +101,12 @@ router.post('/login', async (req, res) => {
     });
   }
 
-  const sql = `SELECT id, username, password, fullname, userType FROM users WHERE username = ?`;
+  const sql = `SELECT id, username, password, fullname, userType FROM users WHERE username = $1`;
 
-  db.get(sql, [username], async (err, user) => {
-    if (err) {
-      console.error('Error during login:', err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-
+  try {
+    const result = await pool.query(sql, [username]);
+    const user = result.rows[0];
+    
     if (!user) {
       return res.status(401).json({ 
         success: false, 
@@ -121,48 +114,46 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    try {
-      // Check if password is hashed (new users) or plain text (legacy users)
-      let passwordMatch = false;
+    // Check if password is hashed (new users) or plain text (legacy users)
+    let passwordMatch = false;
+    
+    if (user.password.startsWith('$2b$')) {
+      // Password is hashed, use bcrypt to compare
+      passwordMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // Legacy plain text password (for existing admin user)
+      passwordMatch = password === user.password;
       
-      if (user.password.startsWith('$2b$')) {
-        // Password is hashed, use bcrypt to compare
-        passwordMatch = await bcrypt.compare(password, user.password);
-      } else {
-        // Legacy plain text password (for existing admin user)
-        passwordMatch = password === user.password;
-        
-        // Optionally hash the password for future use
-        if (passwordMatch) {
-          const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-          db.run(`UPDATE users SET password = ? WHERE id = ?`, [hashedPassword, user.id]);
-        }
+      // Optionally hash the password for future use
+      if (passwordMatch) {
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        await pool.query(`UPDATE users SET password = $1 WHERE id = $2`, [hashedPassword, user.id]);
       }
-
-      if (!passwordMatch) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'Invalid username or password' 
-        });
-      }
-
-      // Update last login time
-      db.run(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?`, [user.id]);
-
-      res.json({ 
-        success: true, 
-        user: {
-          id: user.id,
-          username: user.username,
-          fullname: user.fullname,
-          userType: user.userType
-        }
-      });
-    } catch (error) {
-      console.error('Error verifying password:', error);
-      return res.status(500).json({ success: false, error: 'Login failed' });
     }
-  });
+
+    if (!passwordMatch) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    // Update last login time
+    await pool.query(`UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
+
+    res.json({ 
+      success: true, 
+      user: {
+        id: user.id,
+        username: user.username,
+        fullname: user.fullname,
+        userType: user.userType
+      }
+    });
+  } catch (error) {
+    console.error('Error during login:', error);
+    return res.status(500).json({ success: false, error: 'Login failed' });
+  }
 });
 
 // Update user password (admin only)
@@ -181,28 +172,22 @@ router.put('/users/:id/password', async (req, res) => {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
     
-    const sql = `UPDATE users SET password = ? WHERE id = ?`;
+    const sql = `UPDATE users SET password = $1 WHERE id = $2`;
+    const result = await pool.query(sql, [hashedPassword, userId]);
 
-    db.run(sql, [hashedPassword, userId], function(err) {
-      if (err) {
-        console.error('Error updating password:', err);
-        return res.status(500).json({ success: false, error: err.message });
-      }
-
-      if (this.changes === 0) {
-        return res.status(404).json({ 
-          success: false, 
-          error: 'User not found' 
-        });
-      }
-
-      res.json({ 
-        success: true, 
-        message: 'Password updated successfully' 
+    if (result.rowCount === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
       });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Password updated successfully' 
     });
   } catch (error) {
-    console.error('Error hashing new password:', error);
+    console.error('Error updating password:', error);
     return res.status(500).json({ success: false, error: 'Failed to update password' });
   }
 });

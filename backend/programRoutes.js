@@ -1,27 +1,26 @@
 const express = require('express');
-const db = require('./database');
+const pool = require('./database');
 
 const router = express.Router();
 
 // GET /api/programs - Get all programs
-router.get('/programs', (req, res) => {
+router.get('/programs', async (req, res) => {
   const sql = `SELECT * FROM programs ORDER BY created_at ASC`;
   
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to fetch programs' });
-    }
-
+  try {
+    const result = await pool.query(sql);
     res.json({
       success: true,
-      programs: rows
+      programs: result.rows
     });
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Failed to fetch programs' });
+  }
 });
 
 // POST /api/programs - Add new program (Admin only)
-router.post('/programs', (req, res) => {
+router.post('/programs', async (req, res) => {
   const { id, name, icon, path, color, created_date, createdBy, userType } = req.body;
 
   // Check if user is admin (case-insensitive)
@@ -36,27 +35,27 @@ router.post('/programs', (req, res) => {
   // Ensure created_date is always set
   const currentDate = created_date || new Date().toISOString().split('T')[0];
 
-  const sql = `INSERT INTO programs (id, name, icon, path, color, created_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  const sql = `INSERT INTO programs (id, name, icon, path, color, created_date, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
   
-  db.run(sql, [id, name, icon || '', path, color, currentDate, createdBy || 'unknown'], function(err) {
-    if (err) {
-      if (err.message.includes('UNIQUE constraint failed')) {
-        return res.status(400).json({ error: 'Program already exists' });
-      }
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to add program' });
-    }
-
+  try {
+    await pool.query(sql, [id, name, icon || '', path, color, currentDate, createdBy || 'unknown']);
+    
     res.json({
       success: true,
       message: 'Program added successfully',
       program: { id, name, icon, path, color, created_date: currentDate, created_by: createdBy || 'unknown' }
     });
-  });
+  } catch (err) {
+    if (err.code === '23505') { // PostgreSQL unique violation
+      return res.status(400).json({ error: 'Program already exists' });
+    }
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Failed to add program' });
+  }
 });
 
 // DELETE /api/programs/:id - Delete program (Admin only)
-router.delete('/programs/:id', (req, res) => {
+router.delete('/programs/:id', async (req, res) => {
   const programId = req.params.id;
   const userType = req.query.userType || req.headers['user-type'];
 
@@ -71,15 +70,12 @@ router.delete('/programs/:id', (req, res) => {
     return res.status(400).json({ error: 'Cannot delete default programs' });
   }
 
-  const sql = `DELETE FROM programs WHERE id = ?`;
+  const sql = `DELETE FROM programs WHERE id = $1`;
   
-  db.run(sql, [programId], function(err) {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to delete program' });
-    }
-
-    if (this.changes === 0) {
+  try {
+    const result = await pool.query(sql, [programId]);
+    
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Program not found' });
     }
 
@@ -87,7 +83,10 @@ router.delete('/programs/:id', (req, res) => {
       success: true,
       message: 'Program deleted successfully'
     });
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Failed to delete program' });
+  }
 });
 
 module.exports = router;

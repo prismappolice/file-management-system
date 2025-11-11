@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const db = require('./database');
+const pool = require('./database');
 
 const router = express.Router();
 
@@ -37,7 +37,7 @@ const upload = multer({
 });
 
 // POST /api/upload - Upload file
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -71,26 +71,27 @@ router.post('/upload', upload.single('file'), (req, res) => {
     console.log('Created by:', createdBy);
 
     // Insert into database
-    const sql = `INSERT INTO files (fileNo, subject, department, date, filename, filepath, program, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO files (fileNo, subject, department, date, filename, filepath, program, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`;
     
-    db.run(sql, [fileNo, subject, department, date, filename, filepath, programName, createdBy], function(err) {
-      if (err) {
-        console.error('Database error:', err);
-        // Delete uploaded file if database insert fails
-        fs.unlinkSync(filepath);
-        return res.status(500).json({ error: 'Failed to save file information' });
-      }
-
-      console.log('✓ File saved successfully - ID:', this.lastID, 'Program:', programName);
+    try {
+      const result = await pool.query(sql, [fileNo, subject, department, date, filename, filepath, programName, createdBy]);
+      const fileId = result.rows[0].id;
+      
+      console.log('✓ File saved successfully - ID:', fileId, 'Program:', programName);
       console.log('=====================\n');
 
       res.json({
         success: true,
         message: 'File Uploaded Successfully',
-        fileId: this.lastID,
+        fileId: fileId,
         filename: filename
       });
-    });
+    } catch (err) {
+      console.error('Database error:', err);
+      // Delete uploaded file if database insert fails
+      fs.unlinkSync(filepath);
+      return res.status(500).json({ error: 'Failed to save file information' });
+    }
 
   } catch (error) {
     console.error('Upload error:', error);
@@ -99,7 +100,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // GET /api/files - Get all uploaded files (filtered by program and user access)
-router.get('/files', (req, res) => {
+router.get('/files', async (req, res) => {
   const program = req.query.program;
   const userType = req.query.userType;
   const userName = req.query.userName;
@@ -109,17 +110,18 @@ router.get('/files', (req, res) => {
   let sql = `SELECT id, fileNo, subject, department, date, filename, program, created_by, uploaded_at FROM files`;
   let params = [];
   let whereClauses = [];
+  let paramIndex = 1;
   
   // Filter by program if specified
   if (program) {
-    whereClauses.push(`program = ?`);
+    whereClauses.push(`program = $${paramIndex++}`);
     params.push(program);
   }
   
   // Apply user-based file access control
   if (!userType || userType.toLowerCase() !== 'admin') {
     // Non-admin users can only see their own files
-    whereClauses.push(`created_by = ?`);
+    whereClauses.push(`created_by = $${paramIndex++}`);
     params.push(userName);
   }
   // Admin users can see all files (no additional filter)
@@ -133,33 +135,30 @@ router.get('/files', (req, res) => {
   
   console.log('SQL:', sql, 'Params:', params);
   
-  db.all(sql, params, (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to fetch files' });
-    }
-
-    console.log('Found', rows.length, 'files for user:', userName, 'type:', userType);
+  try {
+    const result = await pool.query(sql, params);
+    console.log('Found', result.rows.length, 'files for user:', userName, 'type:', userType);
 
     res.json({
       success: true,
-      files: rows
+      files: result.rows
     });
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Failed to fetch files' });
+  }
 });
 
 // GET /api/view/:id - Create HTML preview page for files
-router.get('/view/:id', (req, res) => {
+router.get('/view/:id', async (req, res) => {
   const fileId = req.params.id;
   
-  const sql = `SELECT * FROM files WHERE id = ?`;
+  const sql = `SELECT * FROM files WHERE id = $1`;
   
-  db.get(sql, [fileId], (err, row) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
+  try {
+    const result = await pool.query(sql, [fileId]);
+    const row = result.rows[0];
+    
     if (!row) {
       return res.status(404).json({ error: 'File not found' });
     }
@@ -374,21 +373,22 @@ router.get('/view/:id', (req, res) => {
 
     res.setHeader('Content-Type', 'text/html');
     res.send(html);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // GET /api/download/:id - Download file
-router.get('/download/:id', (req, res) => {
+router.get('/download/:id', async (req, res) => {
   const fileId = req.params.id;
   
-  const sql = `SELECT * FROM files WHERE id = ?`;
+  const sql = `SELECT * FROM files WHERE id = $1`;
   
-  db.get(sql, [fileId], (err, row) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
+  try {
+    const result = await pool.query(sql, [fileId]);
+    const row = result.rows[0];
+    
     if (!row) {
       return res.status(404).json({ error: 'File not found' });
     }
@@ -410,25 +410,26 @@ router.get('/download/:id', (req, res) => {
     // Stream file to client
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // GET /api/serve/:id - Serve file directly for viewing in browser
-router.get('/serve/:id', (req, res) => {
+router.get('/serve/:id', async (req, res) => {
   const fileId = req.params.id;
   
   console.log(`=== SERVE REQUEST ===`);
   console.log(`File ID: ${fileId}`);
   console.log(`Timestamp: ${new Date().toISOString()}`);
   
-  const sql = `SELECT * FROM files WHERE id = ?`;
+  const sql = `SELECT * FROM files WHERE id = $1`;
   
-  db.get(sql, [fileId], (err, row) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
+  try {
+    const result = await pool.query(sql, [fileId]);
+    const row = result.rows[0];
+    
     if (!row) {
       console.log(`File not found in database: ${fileId}`);
       return res.status(404).json({ error: 'File not found' });
@@ -584,11 +585,14 @@ router.get('/serve/:id', (req, res) => {
     });
     
     fileStream.pipe(res);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // DELETE /api/files/:id - Delete file (with ownership check)
-router.delete('/files/:id', (req, res) => {
+router.delete('/files/:id', async (req, res) => {
   const fileId = req.params.id;
   const { userName, userType } = req.body;
   
@@ -597,15 +601,12 @@ router.delete('/files/:id', (req, res) => {
   console.log(`Request userName: "${userName}"`);
   console.log(`Request userType: "${userType}"`);
   
-  // First, get file details including who created it
-  const sql = `SELECT * FROM files WHERE id = ?`;
-  
-  db.get(sql, [fileId], (err, row) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
+  try {
+    // First, get file details including who created it
+    const sql = `SELECT * FROM files WHERE id = $1`;
+    const result = await pool.query(sql, [fileId]);
+    const row = result.rows[0];
+    
     if (!row) {
       return res.status(404).json({ error: 'File not found' });
     }
@@ -630,25 +631,22 @@ router.delete('/files/:id', (req, res) => {
     const filePath = row.filepath;
     
     // Delete from database
-    const deleteSql = `DELETE FROM files WHERE id = ?`;
-    
-    db.run(deleteSql, [fileId], function(err) {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Failed to delete file record' });
-      }
+    const deleteSql = `DELETE FROM files WHERE id = $1`;
+    await pool.query(deleteSql, [fileId]);
 
-      // Delete physical file
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+    // Delete physical file
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
-      res.json({
-        success: true,
-        message: 'File deleted successfully'
-      });
+    res.json({
+      success: true,
+      message: 'File deleted successfully'
     });
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Failed to delete file' });
+  }
 });
 
 module.exports = router;
