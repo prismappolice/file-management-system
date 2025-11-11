@@ -106,10 +106,10 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
 
   const filteredFiles = files.filter((file) => {
     const matchesText = 
-      file.fileNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      file.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      file.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      file.filename.toLowerCase().includes(searchQuery.toLowerCase())
+      (file.fileNo?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (file.subject?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (file.department?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (file.filename?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     
     const matchesDate = !searchDate || file.date === searchDate
     
