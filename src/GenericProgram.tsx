@@ -33,12 +33,10 @@ interface Program {
 function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  
+
   // Helper functions to determine user permissions
-  const isAdmin = userType === 'admin'
-  const isDistrictUser = !isAdmin  // Any non-admin user is treated as district user
-  
-  // Get program ID from URL path
+  const isAdmin = userType && userType.toLowerCase() === 'admin'
+  const isDistrictUser = !isAdmin  // Any non-admin user is treated as district user  // Get program ID from URL path
   const programId = location.pathname.substring(1) // removes leading '/'
   
   const [programDetails, setProgramDetails] = useState<Program | null>(null)
@@ -53,6 +51,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState('')
   const [uploadError, setUploadError] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [fileToDelete, setFileToDelete] = useState<FileData | null>(null)
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -214,19 +214,24 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
     }
   }
 
-  const handleDelete = async (fileId: number, createdBy: string) => {
+  const confirmDelete = (file: FileData, event: React.MouseEvent) => {
+    event.stopPropagation()
+    
     // Check if user has permission to delete
-    if (!isAdmin && createdBy !== userName) {
+    if (!isAdmin && file.created_by !== userName) {
       alert('You can only delete files uploaded by you!')
       return
     }
+    
+    setFileToDelete(file)
+    setShowDeleteConfirm(true)
+  }
 
-    if (!window.confirm('Are you sure you want to delete this file?')) {
-      return
-    }
+  const handleDeleteFile = async () => {
+    if (!fileToDelete) return
 
     try {
-      const response = await fetch(`${API_URL}/files/${fileId}`, {
+      const response = await fetch(`${API_URL}/files/${fileToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
@@ -237,8 +242,10 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
       const data = await response.json()
 
       if (data.success) {
-        alert('File deleted successfully')
-        fetchFiles()
+        setFiles(files.filter(f => f.id !== fileToDelete.id))
+        setShowDeleteConfirm(false)
+        setFileToDelete(null)
+        alert(`File "${fileToDelete.filename}" deleted successfully!`)
       } else {
         alert(data.error || 'Failed to delete file')
       }
@@ -445,15 +452,15 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
                         </td>
                         <td>
                           <div className="action-buttons">
-                            <button 
+                            <button
                               onClick={() => handleDownload(file.id, file.filename)}
                               className="download-button"
                               title="Download file"
                             >
                               ⬇ Download
                             </button>
-                            <button 
-                              onClick={() => handleDelete(file.id, file.created_by || 'Unknown')}
+                            <button
+                              onClick={(e) => confirmDelete(file, e)}
                               className="delete-button"
                               title="Delete file"
                             >
@@ -472,6 +479,41 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && fileToDelete && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Confirm Delete</h2>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this file?</p>
+              <div className="file-delete-details">
+                <p><strong>File Name:</strong> {fileToDelete.filename}</p>
+                <p><strong>File No:</strong> {fileToDelete.fileNo}</p>
+                <p><strong>Subject:</strong> {fileToDelete.subject}</p>
+                <p><strong>Department:</strong> {fileToDelete.department}</p>
+                <p><strong>Date:</strong> {new Date(fileToDelete.date).toLocaleDateString()}</p>
+                <p><strong>Uploaded By:</strong> {fileToDelete.created_by || 'Unknown'}</p>
+              </div>
+              <p className="warning-text">This action cannot be undone.</p>
+            </div>
+            <div className="modal-actions">
+              <button 
+                onClick={() => setShowDeleteConfirm(false)} 
+                className="cancel-button"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteFile}
+                className="confirm-delete-button"
+              >
+                Delete File
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

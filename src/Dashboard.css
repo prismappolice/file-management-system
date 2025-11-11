@@ -1448,3 +1448,32 @@
     font-size: 1em;
   }
 }
+
+/* File Delete Details Styling */
+.file-delete-details {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid #ff0844;
+}
+
+.file-delete-details p {
+  margin: 0.5rem 0;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.file-delete-details strong {
+  color: #0066ff;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-weight: 600;
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
