@@ -110,18 +110,27 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
     fetchProgramDetails()
   }, [location.pathname])
 
-  const filteredFiles = files.filter((file) => {
-    const query = (searchQuery || '').toLowerCase()
-    const matchesText = 
-      (file.fileNo?.toLowerCase() || '').includes(query) ||
-      (file.subject?.toLowerCase() || '').includes(query) ||
-      (file.department?.toLowerCase() || '').includes(query) ||
-      (file.filename?.toLowerCase() || '').includes(query)
-    
-    const matchesDate = !searchDate || file.date === searchDate
-    
-    return matchesText && matchesDate
-  })
+  const filteredFiles = (() => {
+    try {
+      if (!Array.isArray(files)) return []
+      return files.filter((file) => {
+        if (!file) return false
+        const query = (searchQuery || '').toLowerCase()
+        const matchesText = 
+          (file.fileNo?.toLowerCase() || '').includes(query) ||
+          (file.subject?.toLowerCase() || '').includes(query) ||
+          (file.department?.toLowerCase() || '').includes(query) ||
+          (file.filename?.toLowerCase() || '').includes(query)
+        
+        const matchesDate = !searchDate || file.date === searchDate
+        
+        return matchesText && matchesDate
+      })
+    } catch (error) {
+      console.error('Error filtering files:', error)
+      return []
+    }
+  })()
 
   const fetchFiles = async () => {
     if (!programId) {
