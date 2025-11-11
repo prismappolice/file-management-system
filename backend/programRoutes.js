@@ -23,8 +23,11 @@ router.get('/programs', async (req, res) => {
 router.post('/programs', async (req, res) => {
   const { id, name, icon, path, color, created_date, createdBy, userType } = req.body;
 
+  console.log('Program creation request:', { id, name, userType, createdBy });
+
   // Check if user is admin (case-insensitive)
   if (!userType || userType.toUpperCase() !== 'ADMIN') {
+    console.log('Access denied - userType:', userType);
     return res.status(403).json({ error: 'Access denied. Only administrators can create programs.' });
   }
 

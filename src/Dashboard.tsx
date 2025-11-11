@@ -99,6 +99,9 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
       userType: userType
     }
 
+    console.log('Creating program with data:', newProgram)
+    console.log('Current userType:', userType)
+
     // Save to server
     fetch(`${API_URL}/programs`, {
       method: 'POST',
@@ -107,6 +110,7 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
     })
     .then(res => res.json())
     .then(data => {
+      console.log('Program creation response:', data)
       if (data.success) {
         // Use the program data returned from server to ensure consistency
         const addedProgram = data.program || newProgram
@@ -118,6 +122,7 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
         setNewProgramColor('#ff0844')
         alert(`Program "${newProgramName}" added successfully!`)
       } else {
+        console.error('Program creation failed:', data.error)
         alert(data.error || 'Failed to add program')
       }
     })
