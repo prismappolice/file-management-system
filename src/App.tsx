@@ -17,7 +17,7 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ username, password, error, onUsernameChange, onPasswordChange, onLogin }: LoginPageProps) => (
-  <div className="App">
+  <div className="App login-app">
     <div className="login-container">
       <div className="login-content">
         <div className="title-header">
@@ -138,7 +138,7 @@ function AppContent() {
   // Show loading screen while checking for existing session
   if (isLoading) {
     return (
-      <div className="App">
+      <div className="App login-app">
         <div className="login-container">
           <div className="login-content">
             <div className="title-header">

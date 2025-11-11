@@ -105,19 +105,12 @@ body {
   position: relative;
 }
 
-/* Center content only for login container */
-.App:has(.login-container) {
+/* Login page needs centering */
+.App.login-app {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
-}
-
-/* For dashboard and program pages, use normal flow */
-.App:has(.dashboard-wrapper),
-.App:has(.dashboard-page-wrapper) {
-  display: block;
-  padding: 0;
 }
 
 /* ===== PROFESSIONAL LOGIN SYSTEM ===== */
