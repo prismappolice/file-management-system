@@ -52,7 +52,7 @@ async function initializeDatabase() {
         name VARCHAR(255) NOT NULL,
         icon TEXT,
         path VARCHAR(255) NOT NULL,
-        color VARCHAR(50) NOT NULL,
+        color VARCHAR(150) NOT NULL,
         created_by VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_date VARCHAR(50)
