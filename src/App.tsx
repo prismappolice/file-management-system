@@ -50,7 +50,7 @@ const LoginPage = ({ username, password, error, onUsernameChange, onPasswordChan
 function App() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [userType, setUserType] = useState<'district' | 'admin'>('district')
+  const [userType, setUserType] = useState<string>('USER')  // Changed to string to accept any userType
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [loggedInUser, setLoggedInUser] = useState('')
   const [error, setError] = useState('')
@@ -62,9 +62,11 @@ function App() {
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser)
+        // Normalize userType to uppercase
+        const normalizedUserType = userData.userType?.toUpperCase() || 'USER'
         setIsLoggedIn(true)
         setLoggedInUser(userData.fullname)
-        setUserType(userData.userType)
+        setUserType(normalizedUserType)
       } catch (error) {
         console.error('Error parsing saved user data:', error)
         localStorage.removeItem('fileManagementUser')
@@ -87,18 +89,23 @@ function App() {
       const data = await response.json()
 
       if (data.success && data.user) {
+        // Normalize userType to uppercase for consistency
+        const normalizedUserType = data.user.userType?.toUpperCase() || 'USER'
+        
         const userData = {
           fullname: data.user.fullname,
-          userType: data.user.userType,
+          userType: normalizedUserType,
           username: data.user.username
         }
+        
+        console.log('Login successful:', userData)
         
         // Save to localStorage for persistence
         localStorage.setItem('fileManagementUser', JSON.stringify(userData))
         
         setIsLoggedIn(true)
         setLoggedInUser(data.user.fullname)
-        setUserType(data.user.userType)
+        setUserType(normalizedUserType)
         // Force navigation to dashboard after login
         window.history.pushState({}, '', '/dashboard')
       } else {

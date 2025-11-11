@@ -8,11 +8,16 @@ const SALT_ROUNDS = 10;
 
 // Get all users (admin only)
 router.get('/users', async (req, res) => {
-  const sql = `SELECT id, username, password, fullname, userType, created_by, created_at, last_login FROM users ORDER BY created_at DESC`;
+  const sql = `SELECT id, username, password, fullname, usertype, created_by, created_at, last_login FROM users ORDER BY created_at DESC`;
   
   try {
     const result = await pool.query(sql);
-    res.json({ success: true, users: result.rows });
+    // Map usertype to userType for frontend compatibility
+    const users = result.rows.map(user => ({
+      ...user,
+      userType: user.usertype
+    }));
+    res.json({ success: true, users });
   } catch (err) {
     console.error('Error fetching users:', err);
     return res.status(500).json({ success: false, error: err.message });
@@ -34,7 +39,7 @@ router.post('/users/create', async (req, res) => {
     // Hash the password before storing
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     
-    const sql = `INSERT INTO users (username, password, fullname, userType, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING id`;
+    const sql = `INSERT INTO users (username, password, fullname, usertype, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING id`;
     const params = [username, hashedPassword, fullname, userType || 'district', createdBy || 'admin'];
 
     const result = await pool.query(sql, params);
@@ -101,7 +106,7 @@ router.post('/login', async (req, res) => {
     });
   }
 
-  const sql = `SELECT id, username, password, fullname, userType FROM users WHERE username = $1`;
+  const sql = `SELECT id, username, password, fullname, usertype FROM users WHERE username = $1`;
 
   try {
     const result = await pool.query(sql, [username]);
