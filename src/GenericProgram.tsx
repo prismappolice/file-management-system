@@ -231,8 +231,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
   const confirmDelete = (file: FileData, event: React.MouseEvent) => {
     event.stopPropagation()
     
-    // Check if user has permission to delete
-    if (!isAdmin && file.created_by !== userName) {
+    // Check if user has permission to delete - only file owner can delete
+    if (file.created_by !== userName) {
       alert('You can only delete files uploaded by you!')
       return
     }
@@ -472,8 +472,8 @@ function GenericProgram({ userType, userName, onLogout }: GenericProgramProps) {
                             >
                               ⬇ Download
                             </button>
-                            {/* Admins can delete any file, users can only delete their own files */}
-                            {(isAdmin || file.created_by === userName) && (
+                            {/* Only file owner can delete their own files */}
+                            {file.created_by === userName && (
                               <button
                                 onClick={(e) => confirmDelete(file, e)}
                                 className="delete-button"

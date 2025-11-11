@@ -215,8 +215,8 @@ function MonthaCyclone({ userType, userName, onLogout }: MonthaCycloneProps) {
   }
 
   const handleDelete = async (id: number, createdBy: string) => {
-    // Check if user has permission to delete
-    if (!isAdmin && createdBy !== userName) {
+    // Check if user has permission to delete - only file owner can delete
+    if (createdBy !== userName) {
       alert('You can only delete files uploaded by you!')
       return
     }
@@ -413,13 +413,16 @@ function MonthaCyclone({ userType, userName, onLogout }: MonthaCycloneProps) {
                         >
                           ⬇ Download
                         </button>
-                        <button
-                          onClick={() => handleDelete(file.id, userName)}
-                          className="delete-button"
-                          title="Delete file"
-                        >
-                          🗑 Delete
-                        </button>
+                        {/* Only show delete button to file owner */}
+                        {file.created_by === userName && (
+                          <button
+                            onClick={() => handleDelete(file.id, file.created_by || userName)}
+                            className="delete-button"
+                            title="Delete file"
+                          >
+                            🗑 Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
