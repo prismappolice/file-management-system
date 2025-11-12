@@ -1055,7 +1055,9 @@
 }
 
 .table-wrapper {
-  overflow-x: hidden; /* Prevent horizontal scroll */
+  /* Allow horizontal scrolling when table is wider than container (mobile/tablet) */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   overflow-y: visible;
   border-radius: 12px;
   border: 2px solid #0066ff;
@@ -1156,6 +1158,39 @@
 .programs-table td:last-child {
   border-right: none;
   overflow: visible; /* Allow buttons to be fully visible */
+}
+
+/* Files / Programs table responsive helper - enables horizontal scroll on small screens */
+.files-table-container,
+.table-container {
+  overflow-x: auto; /* show horizontal scrollbar when needed */
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.files-table,
+.programs-table,
+.users-table {
+  min-width: 1000px; /* give tables a minimum width so columns don't wrap awkwardly */
+  width: 100%;
+}
+
+/* Tablet screens (portrait and landscape) */
+@media (max-width: 1024px) {
+  .files-table,
+  .programs-table,
+  .users-table {
+    min-width: 900px; /* ensure horizontal scroll on tablets */
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 600px) {
+  .files-table,
+  .programs-table,
+  .users-table {
+    min-width: 700px; /* slightly smaller min width for very small screens */
+  }
 }
 
 .serial-cell {

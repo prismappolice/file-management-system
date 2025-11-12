@@ -1478,3 +1478,32 @@ body {
   background: #ff3838;
   transform: scale(1.1);
 }
+
+/* ===== IDLE TIMEOUT WARNING MODAL ===== */
+.idle-warning-modal {
+  max-width: 500px;
+  text-align: center;
+  animation: shake 0.5s ease-in-out;
+}
+
+.idle-warning-modal h2 {
+  justify-content: center;
+}
+
+.idle-warning-modal .modal-body {
+  padding: 1rem 0;
+}
+
+.idle-warning-modal .modal-body p {
+  margin: 0.5rem 0;
+}
+
+.idle-warning-modal .modal-actions {
+  margin-top: 1.5rem;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}

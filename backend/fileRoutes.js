@@ -139,11 +139,14 @@ router.get('/files', async (req, res) => {
     const result = await pool.query(sql, params);
     console.log('Found', result.rows.length, 'files for user:', userName, 'type:', userType);
     
-    // Map fileno to fileNo for frontend compatibility
-    const files = result.rows.map(file => ({
-      ...file,
-      fileNo: file.fileno
-    }));
+    // Map fileno to fileNo for frontend compatibility - remove fileno to avoid confusion
+    const files = result.rows.map(file => {
+      const { fileno, ...rest } = file;
+      return {
+        ...rest,
+        fileNo: fileno
+      };
+    });
 
     res.json({
       success: true,

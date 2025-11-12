@@ -4,6 +4,7 @@ import './App.css'
 import Dashboard from './Dashboard'
 import GenericProgram from './GenericProgram'
 import UserManagement from './UserManagement'
+import { useIdleTimer } from './hooks/useIdleTimer'
 
 const API_URL = '/api'
 
@@ -58,6 +59,43 @@ function AppContent() {
   const [loggedInUser, setLoggedInUser] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [showIdleWarning, setShowIdleWarning] = useState(false)
+
+  // Auto-logout after 10 minutes of inactivity
+  const IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes in milliseconds
+  const WARNING_TIME = 1 * 60 * 1000 // Show warning 1 minute before logout
+
+  const handleIdleLogout = () => {
+    if (isLoggedIn) {
+      console.log('User has been idle for 10 minutes. Logging out...')
+      handleLogout()
+      alert('You have been logged out due to inactivity.')
+    }
+  }
+
+  const handleIdleWarning = () => {
+    if (isLoggedIn) {
+      setShowIdleWarning(true)
+    }
+  }
+
+  const handleStayActive = () => {
+    setShowIdleWarning(false)
+    idleTimer.resetTimer()
+  }
+
+  // Initialize idle timer
+  const idleTimer = useIdleTimer({
+    timeout: IDLE_TIMEOUT,
+    onIdle: handleIdleLogout,
+    warningTime: WARNING_TIME,
+    onWarning: handleIdleWarning,
+    onActive: () => {
+      if (showIdleWarning) {
+        setShowIdleWarning(false)
+      }
+    }
+  })
 
   // Check for existing login session on app load
   useEffect(() => {
@@ -181,6 +219,29 @@ function AppContent() {
         onPasswordChange={setPassword}
         onLogin={handleLogin}
       />
+    )
+  }
+
+  // Show idle warning modal if needed
+  if (showIdleWarning && isLoggedIn) {
+    return (
+      <div className="form-modal" style={{ zIndex: 2000 }}>
+        <div className="form-content" style={{ maxWidth: 400, textAlign: 'center' }}>
+          <h3>Session Expiring Soon</h3>
+          <p style={{ margin: '1.5rem 0', color: '#b91c1c', fontWeight: 600 }}>
+            You have been inactive for a while.<br />
+            You will be logged out in 1 minute due to inactivity.
+          </p>
+          <div className="form-actions" style={{ justifyContent: 'center' }}>
+            <button className="btn-submit" onClick={handleStayActive}>
+              Stay Logged In
+            </button>
+            <button className="btn-cancel" onClick={handleLogout}>
+              Logout Now
+            </button>
+          </div>
+        </div>
+      </div>
     )
   }
 

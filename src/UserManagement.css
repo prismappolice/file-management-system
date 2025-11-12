@@ -757,12 +757,15 @@
   }
 
   .table-container {
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    /* Allow horizontal scroll on narrow screens so wide tables remain usable */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     overflow-y: visible;
   }
 
   .users-table {
-    min-width: 100%; /* Use full width instead of fixed min-width */
+    /* Keep table full width but allow it to overflow horizontally on small screens */
+    min-width: 900px; /* increased for tablet support */
     table-layout: fixed; /* Fixed table layout */
   }
 
@@ -792,5 +795,17 @@
 
   .copy-button {
     width: 100%;
+  }
+}
+
+/* Additional responsive support for tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .users-table {
+    min-width: 950px; /* ensure scroll on tablets */
   }
 }
