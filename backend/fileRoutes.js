@@ -139,14 +139,18 @@ router.get('/files', async (req, res) => {
     const result = await pool.query(sql, params);
     console.log('Found', result.rows.length, 'files for user:', userName, 'type:', userType);
     
-    // Map fileno to fileNo for frontend compatibility - remove fileno to avoid confusion
-    const files = result.rows.map(file => {
-      const { fileno, ...rest } = file;
-      return {
-        ...rest,
-        fileNo: fileno
-      };
-    });
+    // Map fileno to fileNo for frontend compatibility
+    const files = result.rows.map(file => ({
+      id: file.id,
+      fileNo: file.fileno,  // Map lowercase fileno to camelCase fileNo
+      subject: file.subject,
+      department: file.department,
+      date: file.date,
+      filename: file.filename,
+      program: file.program,
+      created_by: file.created_by,
+      uploaded_at: file.uploaded_at
+    }));
 
     res.json({
       success: true,
