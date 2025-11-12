@@ -360,6 +360,9 @@
   text-align: center;
   padding: 2rem;
   margin-top: 2rem;
+  width: 100%;
+  display: block;
+  clear: both;
 }
 
 .dashboard-footer p {
@@ -467,6 +470,32 @@
     min-width: 48px;
     padding: 0.8rem 1rem;
     font-size: 1.3rem;
+  }
+  
+  /* Footer styles for very small screens */
+  .project-footer {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  .dashboard-footer {
+    padding: 1rem 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .dashboard-footer p {
+    font-size: 0.8rem;
+  }
+  
+  .footer-section h4 {
+    font-size: 0.85rem;
+  }
+  
+  .footer-section p,
+  .footer-section ul li {
+    font-size: 0.75rem;
   }
 }
 
@@ -732,6 +761,10 @@
   padding: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
+  width: 100%;
+  display: block;
+  clear: both;
+  box-sizing: border-box;
 }
 
 .footer-content {
@@ -788,6 +821,7 @@
   .project-footer {
     margin-top: 1.5rem;
     padding: 1rem;
+    margin-bottom: 1rem;
   }
   
   .footer-content {
@@ -803,6 +837,16 @@
   .footer-section p,
   .footer-section ul li {
     font-size: 0.85rem;
+  }
+  
+  .dashboard-footer {
+    padding: 1.5rem 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .dashboard-footer p {
+    font-size: 0.9rem;
   }
 }
 
