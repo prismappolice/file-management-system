@@ -765,6 +765,9 @@
   display: block;
   clear: both;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  min-height: 150px; /* Ensure footer has minimum height */
 }
 
 .footer-content {
@@ -822,6 +825,10 @@
     margin-top: 1.5rem;
     padding: 1rem;
     margin-bottom: 1rem;
+    display: block !important;
+    width: 100% !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   .footer-content {
@@ -891,7 +898,16 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  /* Container itself doesn't scroll, table-wrapper inside does */
+  overflow-x: auto; /* Enable scroll on container for mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On mobile, reduce padding to maximize table space */
+@media (max-width: 768px) {
+  .programs-table-container {
+    padding: 0.5rem;
+    border-radius: 12px;
+  }
 }
 
 /* Enable horizontal scroll for table wrapper */
@@ -1134,7 +1150,6 @@
 .files-table,
 .users-table {
   width: 100%;
-  min-width: 900px !important; /* Force scroll on screens < 900px */
   table-layout: auto;
   border-collapse: collapse;
   background: white;
@@ -1143,6 +1158,15 @@
 
 .programs-table {
   border: none;
+}
+
+/* ONLY apply min-width on mobile/tablet to trigger horizontal scroll */
+@media (max-width: 1200px) {
+  .programs-table,
+  .files-table,
+  .users-table {
+    min-width: 900px !important; /* Force scroll on smaller screens */
+  }
 }
 
 /* Responsive breakpoints for tables */
