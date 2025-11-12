@@ -1058,12 +1058,13 @@
 
 .table-wrapper {
   /* Allow horizontal scrolling when table is wider than container (mobile/tablet) */
-  overflow-x: auto;
+  overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
   overflow-y: visible;
   border-radius: 12px;
   border: 2px solid #0066ff;
   box-shadow: 0 4px 12px rgba(0, 102, 255, 0.15);
+  width: 100%;
 }
 
 .programs-table {
