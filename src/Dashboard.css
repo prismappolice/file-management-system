@@ -847,6 +847,8 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto; /* Enable horizontal scroll on small screens */
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-controls {
@@ -1066,6 +1068,7 @@
 
 .programs-table {
   width: 100%;
+  min-width: 900px; /* Ensure table has minimum width to trigger horizontal scroll */
   table-layout: fixed; /* Fixed table layout for consistent column widths */
   border-collapse: collapse;
   background: white;
@@ -1162,7 +1165,8 @@
 
 /* Files / Programs table responsive helper - enables horizontal scroll on small screens */
 .files-table-container,
-.table-container {
+.table-container,
+.programs-table-container {
   overflow-x: auto; /* show horizontal scrollbar when needed */
   -webkit-overflow-scrolling: touch;
   width: 100%;
@@ -1182,6 +1186,12 @@
   .users-table {
     min-width: 900px; /* ensure horizontal scroll on tablets */
   }
+  
+  .files-table-container,
+  .table-container,
+  .programs-table-container {
+    padding: 1rem;
+  }
 }
 
 /* Mobile phones */
@@ -1190,6 +1200,12 @@
   .programs-table,
   .users-table {
     min-width: 700px; /* slightly smaller min width for very small screens */
+  }
+  
+  .files-table-container,
+  .table-container,
+  .programs-table-container {
+    padding: 0.75rem;
   }
 }
 
