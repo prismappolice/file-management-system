@@ -1,0 +1,1 @@
+Moved from project root. Production diagnostic script.
