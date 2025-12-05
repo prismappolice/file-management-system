@@ -1,0 +1,308 @@
+﻿import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import './App.css'
+import Dashboard from './Dashboard'
+import GenericProgram from './GenericProgram'
+import UserManagement from './UserManagement'
+import MemoList from './MemoList'
+import MemoFiles from './MemoFiles'
+import { useIdleTimer } from './hooks/useIdleTimer'
+
+const API_URL = '/api'
+
+interface LoginPageProps {
+  username: string
+  password: string
+  error: string
+  onUsernameChange: (value: string) => void
+  onPasswordChange: (value: string) => void
+  onLogin: (e: React.FormEvent) => void
+}
+
+const LoginPage = ({ username, password, error, onUsernameChange, onPasswordChange, onLogin }: LoginPageProps) => (
+  <div className="App login-app">
+    <div className="login-container">
+      <div className="login-content">
+        <div className="title-header">
+          <h1>AP POLICE</h1>
+          <div className="subtitle-with-emblems">
+            <img src="/images/Appolice-Logo.png" alt="AP Police" className="header-emblem left-emblem" />
+            <p className="subtitle">File Management System</p>
+            <img src="/images/prism amblem.png" alt="Prism" className="header-emblem right-emblem" />
+          </div>
+        </div>
+        <div className="login-card">
+          <form onSubmit={onLogin} className="login-form" autoComplete="off">
+            <div className="form-group">
+              <label htmlFor="username">Username:</label>
+              <input id="username" type="text" value={username} onChange={(e) => onUsernameChange(e.target.value)} placeholder="Enter your username" className="form-input" autoComplete="off" required />
+            </div>
+            <div className="form-group">
+              <label htmlFor="password">Password:</label>
+              <input id="password" type="password" value={password} onChange={(e) => onPasswordChange(e.target.value)} placeholder="Enter your password" className="form-input" autoComplete="new-password" required />
+            </div>
+            {error && <div className="error-message">{error}</div>}
+            <button type="submit" className="login-button">Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
+// Inner component that uses router hooks
+function AppContent() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [userType, setUserType] = useState<string>('USER')  // Changed to string to accept any userType
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [loggedInUser, setLoggedInUser] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [showIdleWarning, setShowIdleWarning] = useState(false)
+
+  // Auto-logout after 10 minutes of inactivity
+  const IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes in milliseconds
+  const WARNING_TIME = 1 * 60 * 1000 // Show warning 1 minute before logout
+
+  const handleIdleLogout = () => {
+    if (isLoggedIn) {
+      console.log('User has been idle for 10 minutes. Logging out...')
+      handleLogout()
+      alert('You have been logged out due to inactivity.')
+    }
+  }
+
+  const handleIdleWarning = () => {
+    if (isLoggedIn) {
+      setShowIdleWarning(true)
+    }
+  }
+
+  const handleStayActive = () => {
+    setShowIdleWarning(false)
+    idleTimer.resetTimer()
+  }
+
+  // Initialize idle timer
+  const idleTimer = useIdleTimer({
+    timeout: IDLE_TIMEOUT,
+    onIdle: handleIdleLogout,
+    warningTime: WARNING_TIME,
+    onWarning: handleIdleWarning,
+    onActive: () => {
+      if (showIdleWarning) {
+        setShowIdleWarning(false)
+      }
+    }
+  })
+
+  // Check for existing login session on app load
+  useEffect(() => {
+    const savedUser = localStorage.getItem('fileManagementUser')
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser)
+        // Normalize userType to uppercase
+        const normalizedUserType = userData.userType?.toUpperCase() || 'USER'
+        setIsLoggedIn(true)
+        setLoggedInUser(userData.fullname)
+        setUserType(normalizedUserType)
+      } catch (error) {
+        console.error('Error parsing saved user data:', error)
+        localStorage.removeItem('fileManagementUser')
+      }
+    }
+    setIsLoading(false)
+  }, [])
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.user) {
+        // Normalize userType to uppercase for consistency
+        const normalizedUserType = data.user.userType?.toUpperCase() || 'USER'
+        
+        const userData = {
+          fullname: data.user.fullname,
+          userType: normalizedUserType,
+          username: data.user.username
+        }
+        
+        console.log('Login successful:', userData)
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('fileManagementUser', JSON.stringify(userData))
+        
+        setIsLoggedIn(true)
+        setLoggedInUser(data.user.fullname)
+        setUserType(normalizedUserType)
+        
+        // Navigate to dashboard after login
+        navigate('/dashboard')
+      } else {
+        setError(data.error || 'Invalid username or password')
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('Login failed. Please try again.')
+    }
+  }
+
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('fileManagementUser')
+    
+    setIsLoggedIn(false)
+    setLoggedInUser('')
+    setUsername('')
+    setPassword('')
+    setError('')
+    
+    // Navigate to root
+    navigate('/')
+  }
+
+  // Show loading screen while checking for existing session
+  if (isLoading) {
+    return (
+      <div className="App login-app">
+        <div className="login-container">
+          <div className="login-content">
+            <div className="title-header">
+              <h1>AP POLICE - File Management System</h1>
+              <div className="subtitle-with-emblems">
+                <img src="/images/Appolice-Logo.png" alt="AP Police" className="header-emblem left-emblem" />
+                <p className="subtitle">Andhra Pradesh Police Department</p>
+                <img src="/images/prism amblem.png" alt="Prism" className="header-emblem right-emblem" />
+              </div>
+            </div>
+            <div className="login-card">
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ 
+                  fontSize: '2rem', 
+                  marginBottom: '1rem',
+                  background: 'linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  🔄
+                </div>
+                <p style={{ color: 'var(--gray-600)', fontSize: 'var(--font-size-lg)' }}>Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // If not logged in and trying to access protected routes, redirect to login
+  if (!isLoggedIn && location.pathname !== '/') {
+    return <Navigate to="/" replace />
+  }
+
+  // Show idle warning modal if needed
+  if (showIdleWarning && isLoggedIn) {
+    return (
+      <div className="form-modal" style={{ zIndex: 2000 }}>
+        <div className="form-content" style={{ maxWidth: 400, textAlign: 'center' }}>
+          <h3>Session Expiring Soon</h3>
+          <p style={{ margin: '1.5rem 0', color: '#b91c1c', fontWeight: 600 }}>
+            You have been inactive for a while.<br />
+            You will be logged out in 1 minute due to inactivity.
+          </p>
+          <div className="form-actions" style={{ justifyContent: 'center' }}>
+            <button className="btn-submit" onClick={handleStayActive}>
+              Stay Logged In
+            </button>
+            <button className="btn-cancel" onClick={handleLogout}>
+              Logout Now
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={
+        !isLoggedIn ? (
+          <LoginPage
+            username={username}
+            password={password}
+            error={error}
+            onUsernameChange={setUsername}
+            onPasswordChange={setPassword}
+            onLogin={handleLogin}
+          />
+        ) : (
+          <Navigate to="/dashboard" replace />
+        )
+      } />
+      <Route path="/dashboard" element={
+        isLoggedIn ? (
+          <Dashboard userType={userType} userName={loggedInUser} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+      <Route path="/user-management" element={
+        isLoggedIn ? (
+          <UserManagement userName={loggedInUser} userType={userType} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+      {/* Route for program memos */}
+      <Route path="/program/:programId/memos" element={
+        isLoggedIn ? (
+          <MemoList userType={userType} userName={loggedInUser} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+      {/* Route for individual memo files */}
+      <Route path="/program/:programId/memo/:memoId" element={
+        isLoggedIn ? (
+          <MemoFiles userType={userType} userName={loggedInUser} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+      {/* Dynamic route for all program pages - GenericProgram will handle all programs */}
+      <Route path="/*" element={
+        isLoggedIn ? (
+          <GenericProgram userType={userType} userName={loggedInUser} onLogout={handleLogout} />
+        ) : (
+          <Navigate to="/" replace />
+        )
+      } />
+    </Routes>
+  )
+}
+
+// Main App component wraps everything in Router
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  )
+}
+
+export default App
