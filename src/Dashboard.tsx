@@ -261,6 +261,7 @@ function Dashboard({ userType, userName, onLogout }: DashboardProps) {
             </button>
           </div>
         </div>
+        </div>
 
         {/* Add Program Modal - Admin Only */}
         {isAdmin && showAddProgram && (
